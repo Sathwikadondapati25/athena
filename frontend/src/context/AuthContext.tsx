@@ -21,7 +21,14 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    try {
+      const stored = localStorage.getItem('user');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
 
@@ -32,11 +39,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           const response = await api.get('/auth/me');
           setUser(response.data.user);
+          localStorage.setItem('user', JSON.stringify(response.data.user));
           setToken(storedToken);
         } catch (error: any) {
           // Only clear token if it's actually invalid (401), not on network errors
           if (error.response?.status === 401) {
             localStorage.removeItem('token');
+            localStorage.removeItem('user');
             setToken(null);
             setUser(null);
           }
@@ -55,6 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const response = await api.post('/auth/login', { email: normalizedEmail, password: normalizedPassword });
     const { token: newToken, user: newUser } = response.data;
     localStorage.setItem('token', newToken);
+    localStorage.setItem('user', JSON.stringify(newUser));
     setToken(newToken);
     setUser(newUser);
     return newUser; // Return user for role-based redirect
@@ -68,12 +78,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const response = await api.post('/auth/register', { name: name.trim(), email: normalizedEmail, password: normalizedPassword, role });
     const { token: newToken, user: newUser } = response.data;
     localStorage.setItem('token', newToken);
+    localStorage.setItem('user', JSON.stringify(newUser));
     setToken(newToken);
     setUser(newUser);
   };
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setToken(null);
     setUser(null);
     // Clear any cached form data (if any)
