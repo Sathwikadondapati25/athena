@@ -77,6 +77,7 @@ const AppRoutes: React.FC = () => {
       >
         <Route index element={<CoachDashboard />} />
         <Route path="athletes" element={<CoachAthletes />} />
+        <Route path="my-athletes" element={<CoachAthletes />} />
         <Route path="athletes/:id" element={<AthleteDetail />} />
         <Route path="training-sessions" element={<Training />} />
         <Route path="training-risk" element={<RiskAssessment />} />
